@@ -6,7 +6,7 @@ If you install this on a public web server, make sure to register with a unique 
 
 ![Screenshot 1](https://github.com/torguardvpn/wireguard-server-manager/blob/ecca80fc283879fa77ecf65703310bb2e44bd6d6/static/screenshot1.png)
 
-![Screenshot 2](https://gittylab.com/ben/TorGuard_WireGuard/raw/branch/main/static/screenshot2.png)
+![Screenshot 2](https://github.com/torguardvpn/wireguard-server-manager/blob/ecca80fc283879fa77ecf65703310bb2e44bd6d6/static/screenshot2.png)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
