@@ -35,7 +35,7 @@ If you install this on a public web server, make sure to register with a unique 
 
 1. Download the latest release:
 ```bash
-git clone https://gittylab.com/ben/TorGuard_WireGuard.git
+git clone https://github.com/torguardvpn/wireguard-server-manager.git
 ```
 
 2. Run the installer script:
