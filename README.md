@@ -4,7 +4,7 @@ This is the TorGuard WireGuard web interface for managing WireGuard VPN connecti
 
 If you install this on a public web server, make sure to register with a unique password, and it is recommended to restrict IP access in the TG member's area.
 
-![Screenshot 1](https://gittylab.com/ben/TorGuard_WireGuard/raw/branch/main/static/screenshot1.png)
+![Screenshot 1](https://github.com/torguardvpn/wireguard-server-manager/blob/ecca80fc283879fa77ecf65703310bb2e44bd6d6/static/screenshot1.png)
 
 ![Screenshot 2](https://gittylab.com/ben/TorGuard_WireGuard/raw/branch/main/static/screenshot2.png)
 
