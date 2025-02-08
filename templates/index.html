@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="form-container">
+    <!-- Status Display -->
+    <div class="text-center mb-4">
+        <div class="status-container">
+            <span class="badge status-badge {% if status.status == 'connected' %}bg-success{% elif status.status == 'error' %}bg-warning{% else %}bg-danger{% endif %}">
+                {{ status.status|title }}
+            </span>
+            
+            {% if status.status == 'connected' %}
+                <div class="mt-2">
+                    <div class="text-success mb-2">
+                        <i class="bi bi-shield-check me-1"></i>VPN Connection Active
+                    </div>
+                    <div class="text-muted">
+                        <small>
+                            <i class="bi bi-clock me-1"></i>Connected since: {{ status.connected_since }}<br>
+                            <i class="bi bi-arrow-up me-1"></i>Upload: {{ status.tx }}
+                            <i class="bi bi-arrow-down ms-2 me-1"></i>Download: {{ status.rx }}<br>
+                            {% if status.total_tx and status.total_rx %}
+                                <i class="bi bi-graph-up me-1"></i>Total Transfer: ↑{{ status.total_tx }} ↓{{ status.total_rx }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            {% elif status.status == 'error' %}
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>System Issues Detected:
+                    <ul class="mb-0 mt-2 text-start">
+                        {% for issue in status.issues %}
+                            <li>{{ issue }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% else %}
+                <div class="text-muted mt-2">
+                    <small>
+                        <i class="bi bi-info-circle me-1"></i>
+                        {% if status.message %}
+                            {{ status.message }}
+                        {% else %}
+                            VPN is currently disconnected
+                        {% endif %}
+                    </small>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Connection Toggle -->
+    <form method="POST" action="{{ url_for('toggle_vpn') }}" class="mb-4" id="vpnToggleForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="d-grid">
+            <button type="submit" 
+                    class="btn {% if status.status == 'connected' %}btn-danger{% else %}btn-success{% endif %} btn-lg" 
+                    {% if status.status == 'error' or not WG_CONF_PATH.exists() %}disabled{% endif %}>
+                {% if status.status == 'connected' %}
+                    <i class="bi bi-power"></i> Disconnect VPN
+                {% else %}
+                    <i class="bi bi-power"></i> Connect VPN
+                {% endif %}
+            </button>
+        </div>
+        {% if not WG_CONF_PATH.exists() %}
+            <div class="text-center mt-2">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>Please add a WireGuard configuration first
+                </small>
+            </div>
+        {% endif %}
+    </form>
+    
+
+    <!-- Configuration Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex align-items-center">
+            <i class="bi bi-gear-fill me-2"></i>WireGuard Configuration
+            {% if WG_CONF_PATH.exists() %}
+                <span class="badge bg-light text-primary ms-auto">
+                    <i class="bi bi-check-circle me-1"></i>Config Present
+                </span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('save_config') }}" enctype="multipart/form-data" id="configForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-3">
+                    <label for="config_text" class="form-label">
+                        <i class="bi bi-file-text me-2"></i>Paste Configuration
+                    </label>
+                    <textarea 
+                        class="form-control font-monospace" 
+                        id="config_text" 
+                        name="config_text" 
+                        rows="10" 
+                        placeholder="[Interface]&#10;PrivateKey = ...&#10;Address = ...&#10;&#10;[Peer]&#10;PublicKey = ...&#10;AllowedIPs = ...&#10;Endpoint = ..."
+                        spellcheck="false"
+                    ></textarea>
+                    <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>Paste your TorGuard WireGuard configuration here
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="config_file" class="form-label">
+                        <i class="bi bi-upload me-2"></i>Or Upload Configuration File
+                    </label>
+                    <input 
+                        type="file" 
+                        class="form-control" 
+                        id="config_file" 
+                        name="config_file"
+                        accept=".conf,.txt"
+                    >
+                    <div class="form-text">
+                        <i class="bi bi-shield-lock me-1"></i>File will be stored securely with restricted permissions
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary" id="saveConfigBtn">
+                        <i class="bi bi-save me-2"></i>Save Configuration
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="text-center">
+        <a href="https://torguard.net" target="_blank" class="btn btn-outline-secondary">
+            <i class="bi bi-box-arrow-up-right me-2"></i>Login to TorGuard Portal
+        </a>
+    </div>
+
+    <!-- Version Info -->
+    <div class="text-center mt-4">
+        <small class="text-muted">
+            <i class="bi bi-info-circle me-1"></i>TorGuard WireGuard Manager v1.0
+        </small>
+    </div>
+</div>
+
+<!-- Status Update Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Function to update status via API
+        function updateStatus() {
+            fetch('{{ url_for("get_status_route") }}')
+                .then(response => response.json())
+                .then(data => {
+                    const statusContainer = document.querySelector('.status-container');
+                    const statusBadge = statusContainer.querySelector('.status-badge');
+                    
+                    // Update badge class
+                    statusBadge.className = 'badge status-badge';
+                    if (data.status === 'connected') {
+                        statusBadge.classList.add('bg-success');
+                    } else if (data.status === 'error') {
+                        statusBadge.classList.add('bg-warning');
+                    } else {
+                        statusBadge.classList.add('bg-danger');
+                    }
+                    
+                    // Update badge text
+                    statusBadge.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+                    
+                    // Update status details
+                    const details = document.createElement('div');
+                    if (data.status === 'connected') {
+                        details.innerHTML = `
+                            <div class="mt-2">
+                                <div class="text-success mb-2">
+                                    <i class="bi bi-shield-check me-1"></i>VPN Connection Active
+                                </div>
+                                <div class="text-muted">
+                                    <small>
+                                        <i class="bi bi-clock me-1"></i>Connected since: ${data.connected_since}<br>
+                                        <i class="bi bi-arrow-up me-1"></i>Upload: ${data.tx}
+                                        <i class="bi bi-arrow-down ms-2 me-1"></i>Download: ${data.rx}<br>
+                                        ${data.total_tx && data.total_rx ? `<i class="bi bi-graph-up me-1"></i>Total Transfer: ↑${data.total_tx} ↓${data.total_rx}` : ''}
+                                    </small>
+                                </div>
+                            </div>`;
+                    } else if (data.status === 'error') {
+                        const issues = data.issues.map(issue => `<li>${issue}</li>`).join('');
+                        details.innerHTML = `
+                            <div class="alert alert-warning mt-3">
+                                <i class="bi bi-exclamation-triangle me-2"></i>System Issues Detected:
+                                <ul class="mb-0 mt-2 text-start">${issues}</ul>
+                            </div>`;
+                    } else {
+                        details.innerHTML = `
+                            <div class="text-muted mt-2">
+                                <small>
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    ${data.message || 'VPN is currently disconnected'}
+                                </small>
+                            </div>`;
+                    }
+                    
+                    // Replace existing content
+                    while (statusContainer.childNodes.length > 1) {
+                        statusContainer.removeChild(statusContainer.lastChild);
+                    }
+                    statusContainer.appendChild(details);
+                    
+                    // Update toggle button
+                    const toggleBtn = document.querySelector('#vpnToggleForm button');
+                    toggleBtn.className = `btn ${data.status === 'connected' ? 'btn-danger' : 'btn-success'} btn-lg`;
+                    toggleBtn.disabled = data.status === 'error' || !data.config_exists;
+                    toggleBtn.innerHTML = `
+                        <i class="bi bi-power"></i> ${data.status === 'connected' ? 'Disconnect' : 'Connect'} VPN`;
+                })
+                .catch(error => console.error('Error updating status:', error));
+        }
+
+        // Update status every 30 seconds if page is visible
+        setInterval(() => {
+            if (!document.hidden) {
+                updateStatus();
+            }
+        }, 30000);
+
+        // Update when page becomes visible
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                updateStatus();
+            }
+        });
+
+        // File upload handling
+        const configFile = document.getElementById('config_file');
+        const configText = document.getElementById('config_text');
+        
+        configFile.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    configText.value = e.target.result;
+                };
+                
+                reader.readAsText(file);
+            }
+        });
+
+        // Form submission loading state
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const btn = this.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = `
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        ${btn.textContent}`;
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

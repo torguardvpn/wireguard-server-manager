@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="form-container">
+            <div class="text-center mb-4">
+                <h2 class="h3 mb-3">Create Administrator Account</h2>
+                <p class="text-muted">Set up your secure access to TorGuard WireGuard Manager</p>
+            </div>
+
+            <form method="POST" class="needs-validation" novalidate autocomplete="off">
+                <!-- CSRF Protection -->
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- Username Field -->
+                <div class="mb-3">
+                    <label for="username" class="form-label">
+                        <i class="bi bi-person-fill me-2"></i>Username
+                    </label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">
+                            <i class="bi bi-person"></i>
+                        </span>
+                        <input type="text" 
+                               class="form-control" 
+                               id="username" 
+                               name="username" 
+                               required 
+                               autofocus
+                               autocomplete="username"
+                               pattern="[a-zA-Z0-9_-]{3,20}"
+                               title="Username must be 3-20 characters, using only letters, numbers, underscore, or hyphen"
+                               maxlength="20">
+                        <div class="valid-feedback">
+                            <i class="bi bi-check-circle me-1"></i>Username available
+                        </div>
+                        <div class="invalid-feedback">
+                            Username must be 3-20 characters, using only letters, numbers, underscore, or hyphen
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="mb-3">
+                    <label for="password" class="form-label">
+                        <i class="bi bi-key-fill me-2"></i>Password
+                    </label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">
+                            <i class="bi bi-key"></i>
+                        </span>
+                        <input type="password" 
+                               class="form-control" 
+                               id="password" 
+                               name="password" 
+                               required
+                               autocomplete="new-password"
+                               minlength="8"
+                               maxlength="128"
+                               pattern="^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$"
+                               title="Password must be at least 8 characters and include letters, numbers, and special characters">
+                        <button class="btn btn-outline-secondary" 
+                                type="button" 
+                                id="togglePassword"
+                                aria-label="Toggle password visibility">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                    </div>
+                    <!-- Password Strength Meter -->
+                    <div class="progress mt-2" style="height: 5px;">
+                        <div class="progress-bar" id="passwordStrength" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="form-text mt-2">
+                        <div class="password-requirements">
+                            <div id="req-length" class="requirement">
+                                <i class="bi bi-x-circle text-danger"></i> At least 8 characters
+                            </div>
+                            <div id="req-letter" class="requirement">
+                                <i class="bi bi-x-circle text-danger"></i> Contains letters
+                            </div>
+                            <div id="req-number" class="requirement">
+                                <i class="bi bi-x-circle text-danger"></i> Contains numbers
+                            </div>
+                            <div id="req-special" class="requirement">
+                                <i class="bi bi-x-circle text-danger"></i> Contains special characters
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confirm Password Field -->
+                <div class="mb-4">
+                    <label for="confirm_password" class="form-label">
+                        <i class="bi bi-key-fill me-2"></i>Confirm Password
+                    </label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">
+                            <i class="bi bi-key"></i>
+                        </span>
+                        <input type="password" 
+                               class="form-control" 
+                               id="confirm_password" 
+                               required
+                               autocomplete="new-password"
+                               maxlength="128">
+                        <div class="valid-feedback">
+                            <i class="bi bi-check-circle me-1"></i>Passwords match
+                        </div>
+                        <div class="invalid-feedback">
+                            Passwords do not match
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-grid mb-4">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                        <i class="bi bi-person-plus-fill me-2"></i>Create Administrator Account
+                    </button>
+                </div>
+            </form>
+
+            <!-- Security Notices -->
+            <div class="text-center">
+                <small class="text-muted d-block mb-2">
+                    <i class="bi bi-shield-lock me-1"></i>
+                    Your credentials will be stored securely using industry-standard encryption
+                </small>
+                <small class="text-muted d-block">
+                    <i class="bi bi-info-circle me-1"></i>
+                    This account will have full administrative access to the WireGuard Manager
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registration Scripts -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirm_password');
+    const togglePassword = document.getElementById('togglePassword');
+    const submitBtn = document.getElementById('submitBtn');
+    const passwordStrength = document.getElementById('passwordStrength');
+
+    // Password visibility toggle
+    togglePassword.addEventListener('click', function() {
+        const icon = this.querySelector('i');
+        
+        if (password.type === 'password') {
+            password.type = 'text';
+            icon.classList.remove('bi-eye-fill');
+            icon.classList.add('bi-eye-slash-fill');
+        } else {
+            password.type = 'password';
+            icon.classList.remove('bi-eye-slash-fill');
+            icon.classList.add('bi-eye-fill');
+        }
+    });
+
+    // Password strength checker
+    function checkPasswordStrength(value) {
+        let strength = 0;
+        const requirements = {
+            length: value.length >= 8,
+            letter: /[A-Za-z]/.test(value),
+            number: /\d/.test(value),
+            special: /[@$!%*#?&]/.test(value)
+        };
+
+        // Update requirement indicators
+        document.getElementById('req-length').innerHTML = `
+            <i class="bi bi-${requirements.length ? 'check-circle text-success' : 'x-circle text-danger'}"></i>
+            At least 8 characters
+        `;
+        document.getElementById('req-letter').innerHTML = `
+            <i class="bi bi-${requirements.letter ? 'check-circle text-success' : 'x-circle text-danger'}"></i>
+            Contains letters
+        `;
+        document.getElementById('req-number').innerHTML = `
+            <i class="bi bi-${requirements.number ? 'check-circle text-success' : 'x-circle text-danger'}"></i>
+            Contains numbers
+        `;
+        document.getElementById('req-special').innerHTML = `
+            <i class="bi bi-${requirements.special ? 'check-circle text-success' : 'x-circle text-danger'}"></i>
+            Contains special characters
+        `;
+
+        // Calculate strength
+        strength += requirements.length ? 25 : 0;
+        strength += requirements.letter ? 25 : 0;
+        strength += requirements.number ? 25 : 0;
+        strength += requirements.special ? 25 : 0;
+
+        // Update strength bar
+        passwordStrength.style.width = strength + '%';
+        if (strength < 50) {
+            passwordStrength.className = 'progress-bar bg-danger';
+        } else if (strength < 75) {
+            passwordStrength.className = 'progress-bar bg-warning';
+        } else {
+            passwordStrength.className = 'progress-bar bg-success';
+        }
+    }
+
+    // Password input handler
+    password.addEventListener('input', function() {
+        checkPasswordStrength(this.value);
+        if (confirmPassword.value) {
+            confirmPassword.dispatchEvent(new Event('input'));
+        }
+    });
+
+    // Confirm password validation
+    confirmPassword.addEventListener('input', function() {
+        if (this.value !== password.value) {
+            this.setCustomValidity('Passwords do not match');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+
+    // Form submission
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating Account...';
+        }
+        form.classList.add('was-validated');
+    });
+
+    // Prevent form resubmission
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+});
+</script>
+{% endblock %}

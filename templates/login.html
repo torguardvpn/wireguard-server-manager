@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="form-container">
+            <div class="text-center mb-4">
+                <h2 class="h3 mb-3">Welcome Back</h2>
+                <p class="text-muted">Please login to manage your VPN connection</p>
+            </div>
+
+            <form method="POST" class="needs-validation" novalidate autocomplete="off">
+                <!-- CSRF Protection -->
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- Username Field -->
+                <div class="mb-3">
+                    <label for="username" class="form-label">
+                        <i class="bi bi-person-fill me-2"></i>Username
+                    </label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">
+                            <i class="bi bi-person"></i>
+                        </span>
+                        <input type="text" 
+                               class="form-control" 
+                               id="username" 
+                               name="username" 
+                               required 
+                               autofocus
+                               autocomplete="username"
+                               pattern="[a-zA-Z0-9_-]{3,20}"
+                               title="Username must be 3-20 characters, using only letters, numbers, underscore, or hyphen"
+                               maxlength="20">
+                        <div class="invalid-feedback">
+                            Please enter a valid username (3-20 characters, letters, numbers, _ or -)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="mb-4">
+                    <label for="password" class="form-label">
+                        <i class="bi bi-key-fill me-2"></i>Password
+                    </label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">
+                            <i class="bi bi-key"></i>
+                        </span>
+                        <input type="password" 
+                               class="form-control" 
+                               id="password" 
+                               name="password" 
+                               required
+                               autocomplete="current-password"
+                               minlength="8"
+                               maxlength="128">
+                        <button class="btn btn-outline-secondary" 
+                                type="button" 
+                                id="togglePassword"
+                                aria-label="Toggle password visibility">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                        <div class="invalid-feedback">
+                            Password must be at least 8 characters
+                        </div>
+                    </div>
+                    <div class="form-text">
+                        <i class="bi bi-shield-lock me-1"></i>Password is securely encrypted
+                    </div>
+                </div>
+
+                <!-- Rate Limiting Notice -->
+                {% if attempts_remaining is defined %}
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    {{ attempts_remaining }} login attempts remaining
+                </div>
+                {% endif %}
+
+                <!-- Submit Button -->
+                <div class="d-grid mb-4">
+                    <button type="submit" 
+                            class="btn btn-primary btn-lg"
+                            id="loginButton">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                    </button>
+                </div>
+            </form>
+
+            <!-- TorGuard Portal Link -->
+            <div class="text-center">
+                <hr class="my-4">
+                <a href="https://torguard.net" 
+                   target="_blank" 
+                   class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-box-arrow-up-right me-2"></i>Login to TorGuard Portal
+                </a>
+            </div>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="text-center mt-3">
+            <small class="text-muted">
+                <i class="bi bi-shield-lock me-1"></i>
+                Secure, encrypted connection
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Login Scripts -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const loginButton = document.getElementById('loginButton');
+    const togglePassword = document.getElementById('togglePassword');
+    const password = document.getElementById('password');
+    const username = document.getElementById('username');
+
+    // Password visibility toggle
+    togglePassword.addEventListener('click', function() {
+        const icon = this.querySelector('i');
+        
+        if (password.type === 'password') {
+            password.type = 'text';
+            icon.classList.remove('bi-eye-fill');
+            icon.classList.add('bi-eye-slash-fill');
+        } else {
+            password.type = 'password';
+            icon.classList.remove('bi-eye-slash-fill');
+            icon.classList.add('bi-eye-fill');
+        }
+    });
+
+    // Form validation
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        } else {
+            loginButton.disabled = true;
+            loginButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Logging in...';
+        }
+        form.classList.add('was-validated');
+    });
+
+    // Reset validation on input
+    username.addEventListener('input', function() {
+        form.classList.remove('was-validated');
+    });
+
+    password.addEventListener('input', function() {
+        form.classList.remove('was-validated');
+    });
+
+    // Prevent pasting into username field
+    username.addEventListener('paste', function(e) {
+        e.preventDefault();
+    });
+
+    // Prevent form resubmission
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+});
+</script>
+{% endblock %}
